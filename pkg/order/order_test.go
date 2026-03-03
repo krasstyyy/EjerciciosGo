@@ -24,7 +24,7 @@ func setupInventoryAndPricer() (*Inventory, *Pricer) {
 // Round 0 — Tests for the shallow "before" code
 // =============================================================================
 
-func TestPlaceOrder(t *testing.T) {
+/*func TestPlaceOrder(t *testing.T) {
 	tests := []struct {
 		name      string
 		items     []*Item
@@ -295,7 +295,7 @@ func TestCancel(t *testing.T) {
 			}
 		})
 	}
-}
+}*/
 
 // =============================================================================
 // Round 1 — Tell, Don't Ask
@@ -309,125 +309,125 @@ func TestCancel(t *testing.T) {
 // order.Cancel(inventory) → error
 // =============================================================================
 
-// func TestRound1_Checkout(t *testing.T) {
-// 	tests := []struct {
-// 		name        string
-// 		items       []*Item
-// 		wantErr     bool
-// 		wantTotal   float64
-// 		wantStock   map[string]int
-// 	}{
-// 		{
-// 			name:      "valid checkout",
-// 			items:     []*Item{NewItem("TSHIRT", 2), NewItem("MUG", 1)},
-// 			wantTotal: 62.50,
-// 			wantStock: map[string]int{"TSHIRT": 8, "MUG": 4},
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			for _, item := range tt.items {
-// 				cart.AddItem(item)
-// 			}
-//
-// 			ord, err := cart.Checkout(inv, pricer)
-//
-// 			if (err != nil) != tt.wantErr {
-// 				t.Fatalf("Checkout() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-// 			if !tt.wantErr {
-// 				if ord.Total() != tt.wantTotal {
-// 					t.Errorf("expected total %.2f, got %.2f", tt.wantTotal, ord.Total())
-// 				}
-// 				if ord.Status() != "pending" {
-// 					t.Errorf("expected status pending, got %s", ord.Status())
-// 				}
-// 				for sku, want := range tt.wantStock {
-// 					if inv.Stock(sku) != want {
-// 						t.Errorf("expected %s stock %d, got %d", sku, want, inv.Stock(sku))
-// 					}
-// 				}
-// 			}
-// 		})
-// 	}
-// }
+func TestRound1_Checkout(t *testing.T) {
+	tests := []struct {
+		name      string
+		items     []*Item
+		wantErr   bool
+		wantTotal float64
+		wantStock map[string]int
+	}{
+		{
+			name:      "valid checkout",
+			items:     []*Item{NewItem("TSHIRT", 2), NewItem("MUG", 1)},
+			wantTotal: 62.50,
+			wantStock: map[string]int{"TSHIRT": 8, "MUG": 4},
+		},
+	}
 
-// func TestRound1_Lifecycle(t *testing.T) {
-// 	tests := []struct {
-// 		name       string
-// 		pay        float64
-// 		ship       string
-// 		wantStatus string
-// 	}{
-// 		{
-// 			name:       "full lifecycle: pending → paid → shipped",
-// 			pay:        25.00,
-// 			ship:       "123 Main St",
-// 			wantStatus: "shipped",
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			cart.AddItem(NewItem("TSHIRT", 1))
-//
-// 			ord, _ := cart.Checkout(inv, pricer)
-//
-// 			if err := ord.Pay(tt.pay); err != nil {
-// 				t.Fatalf("Pay() unexpected error: %v", err)
-// 			}
-// 			if err := ord.Ship(tt.ship); err != nil {
-// 				t.Fatalf("Ship() unexpected error: %v", err)
-// 			}
-// 			if ord.Status() != tt.wantStatus {
-// 				t.Errorf("expected status %s, got %s", tt.wantStatus, ord.Status())
-// 			}
-// 		})
-// 	}
-// }
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			for _, item := range tt.items {
+				cart.AddItem(item)
+			}
 
-// func TestRound1_CancelRestoresStock(t *testing.T) {
-// 	tests := []struct {
-// 		name            string
-// 		sku             string
-// 		quantity        int
-// 		wantStockAfter  int
-// 		wantStockCancel int
-// 	}{
-// 		{
-// 			name:            "cancel restores inventory",
-// 			sku:             "MUG",
-// 			quantity:        3,
-// 			wantStockAfter:  2,
-// 			wantStockCancel: 5,
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			cart.AddItem(NewItem(tt.sku, tt.quantity))
-//
-// 			ord, _ := cart.Checkout(inv, pricer)
-// 			if inv.Stock(tt.sku) != tt.wantStockAfter {
-// 				t.Fatalf("expected stock %d after checkout, got %d", tt.wantStockAfter, inv.Stock(tt.sku))
-// 			}
-//
-// 			if err := ord.Cancel(inv); err != nil {
-// 				t.Fatalf("Cancel() unexpected error: %v", err)
-// 			}
-// 			if inv.Stock(tt.sku) != tt.wantStockCancel {
-// 				t.Errorf("expected stock %d after cancel, got %d", tt.wantStockCancel, inv.Stock(tt.sku))
-// 			}
-// 		})
-// 	}
-// }
+			ord, err := cart.Checkout(inv, pricer)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("Checkout() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr {
+				if ord.Total() != tt.wantTotal {
+					t.Errorf("expected total %.2f, got %.2f", tt.wantTotal, ord.Total())
+				}
+				if ord.Status() != "pending" {
+					t.Errorf("expected status pending, got %s", ord.Status())
+				}
+				for sku, want := range tt.wantStock {
+					if inv.Stock(sku) != want {
+						t.Errorf("expected %s stock %d, got %d", sku, want, inv.Stock(sku))
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestRound1_Lifecycle(t *testing.T) {
+	tests := []struct {
+		name       string
+		pay        float64
+		ship       string
+		wantStatus string
+	}{
+		{
+			name:       "full lifecycle: pending → paid → shipped",
+			pay:        25.00,
+			ship:       "123 Main St",
+			wantStatus: "shipped",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			cart.AddItem(NewItem("TSHIRT", 1))
+
+			ord, _ := cart.Checkout(inv, pricer)
+
+			if err := ord.Pay(tt.pay); err != nil {
+				t.Fatalf("Pay() unexpected error: %v", err)
+			}
+			if err := ord.Ship(tt.ship); err != nil {
+				t.Fatalf("Ship() unexpected error: %v", err)
+			}
+			if ord.Status() != tt.wantStatus {
+				t.Errorf("expected status %s, got %s", tt.wantStatus, ord.Status())
+			}
+		})
+	}
+}
+
+func TestRound1_CancelRestoresStock(t *testing.T) {
+	tests := []struct {
+		name            string
+		sku             string
+		quantity        int
+		wantStockAfter  int
+		wantStockCancel int
+	}{
+		{
+			name:            "cancel restores inventory",
+			sku:             "MUG",
+			quantity:        3,
+			wantStockAfter:  2,
+			wantStockCancel: 5,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			cart.AddItem(NewItem(tt.sku, tt.quantity))
+
+			ord, _ := cart.Checkout(inv, pricer)
+			if inv.Stock(tt.sku) != tt.wantStockAfter {
+				t.Fatalf("expected stock %d after checkout, got %d", tt.wantStockAfter, inv.Stock(tt.sku))
+			}
+
+			if err := ord.Cancel(inv); err != nil {
+				t.Fatalf("Cancel() unexpected error: %v", err)
+			}
+			if inv.Stock(tt.sku) != tt.wantStockCancel {
+				t.Errorf("expected stock %d after cancel, got %d", tt.wantStockCancel, inv.Stock(tt.sku))
+			}
+		})
+	}
+}
 
 // =============================================================================
 // Round 2 — Deep Modules: Event Log
@@ -442,106 +442,106 @@ func TestCancel(t *testing.T) {
 // }
 // =============================================================================
 
-// func TestRound2_CheckoutEvent(t *testing.T) {
-// 	tests := []struct {
-// 		name       string
-// 		items      []*Item
-// 		wantEvents int
-// 		wantType   string
-// 	}{
-// 		{
-// 			name:       "checkout records created event",
-// 			items:      []*Item{NewItem("TSHIRT", 1)},
-// 			wantEvents: 1,
-// 			wantType:   "created",
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			for _, item := range tt.items {
-// 				cart.AddItem(item)
-// 			}
-//
-// 			ord, _ := cart.Checkout(inv, pricer)
-//
-// 			events := ord.Events()
-// 			if len(events) != tt.wantEvents {
-// 				t.Fatalf("expected %d event(s), got %d", tt.wantEvents, len(events))
-// 			}
-// 			if events[0].Type != tt.wantType {
-// 				t.Errorf("expected type %s, got %s", tt.wantType, events[0].Type)
-// 			}
-// 		})
-// 	}
-// }
+func TestRound2_CheckoutEvent(t *testing.T) {
+	tests := []struct {
+		name       string
+		items      []*Item
+		wantEvents int
+		wantType   string
+	}{
+		{
+			name:       "checkout records created event",
+			items:      []*Item{NewItem("TSHIRT", 1)},
+			wantEvents: 1,
+			wantType:   "created",
+		},
+	}
 
-// func TestRound2_LifecycleEvents(t *testing.T) {
-// 	tests := []struct {
-// 		name       string
-// 		pay        float64
-// 		ship       string
-// 		wantTypes  []string
-// 	}{
-// 		{
-// 			name:      "full lifecycle records all events",
-// 			pay:       25.00,
-// 			ship:      "123 Main St",
-// 			wantTypes: []string{"created", "paid", "shipped"},
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			cart.AddItem(NewItem("TSHIRT", 1))
-//
-// 			ord, _ := cart.Checkout(inv, pricer)
-// 			_ = ord.Pay(tt.pay)
-// 			_ = ord.Ship(tt.ship)
-//
-// 			events := ord.Events()
-// 			if len(events) != len(tt.wantTypes) {
-// 				t.Fatalf("expected %d events, got %d", len(tt.wantTypes), len(events))
-// 			}
-// 			for i, want := range tt.wantTypes {
-// 				if events[i].Type != want {
-// 					t.Errorf("event[%d]: expected type %s, got %s", i, want, events[i].Type)
-// 				}
-// 			}
-// 		})
-// 	}
-// }
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			for _, item := range tt.items {
+				cart.AddItem(item)
+			}
 
-// func TestRound2_FailedTransitionNoEvent(t *testing.T) {
-// 	tests := []struct {
-// 		name       string
-// 		action     string // "ship" on unpaid order
-// 		wantEvents int
-// 	}{
-// 		{
-// 			name:       "failed ship does not record event",
-// 			action:     "ship",
-// 			wantEvents: 1,
-// 		},
-// 	}
-//
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			inv, pricer := setupInventoryAndPricer()
-// 			cart := NewCart("customer-1")
-// 			cart.AddItem(NewItem("TSHIRT", 1))
-//
-// 			ord, _ := cart.Checkout(inv, pricer)
-// 			_ = ord.Ship("123 Main St") // should fail — not paid yet
-//
-// 			events := ord.Events()
-// 			if len(events) != tt.wantEvents {
-// 				t.Errorf("expected %d event(s), got %d", tt.wantEvents, len(events))
-// 			}
-// 		})
-// 	}
-// }
+			ord, _ := cart.Checkout(inv, pricer)
+
+			events := ord.Events()
+			if len(events) != tt.wantEvents {
+				t.Fatalf("expected %d event(s), got %d", tt.wantEvents, len(events))
+			}
+			if events[0].Type != tt.wantType {
+				t.Errorf("expected type %s, got %s", tt.wantType, events[0].Type)
+			}
+		})
+	}
+}
+
+func TestRound2_LifecycleEvents(t *testing.T) {
+	tests := []struct {
+		name      string
+		pay       float64
+		ship      string
+		wantTypes []string
+	}{
+		{
+			name:      "full lifecycle records all events",
+			pay:       25.00,
+			ship:      "123 Main St",
+			wantTypes: []string{"created", "paid", "shipped"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			cart.AddItem(NewItem("TSHIRT", 1))
+
+			ord, _ := cart.Checkout(inv, pricer)
+			_ = ord.Pay(tt.pay)
+			_ = ord.Ship(tt.ship)
+
+			events := ord.Events()
+			if len(events) != len(tt.wantTypes) {
+				t.Fatalf("expected %d events, got %d", len(tt.wantTypes), len(events))
+			}
+			for i, want := range tt.wantTypes {
+				if events[i].Type != want {
+					t.Errorf("event[%d]: expected type %s, got %s", i, want, events[i].Type)
+				}
+			}
+		})
+	}
+}
+
+func TestRound2_FailedTransitionNoEvent(t *testing.T) {
+	tests := []struct {
+		name       string
+		action     string // "ship" on unpaid order
+		wantEvents int
+	}{
+		{
+			name:       "failed ship does not record event",
+			action:     "ship",
+			wantEvents: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv, pricer := setupInventoryAndPricer()
+			cart := NewCart("customer-1")
+			cart.AddItem(NewItem("TSHIRT", 1))
+
+			ord, _ := cart.Checkout(inv, pricer)
+			_ = ord.Ship("123 Main St") // should fail — not paid yet
+
+			events := ord.Events()
+			if len(events) != tt.wantEvents {
+				t.Errorf("expected %d event(s), got %d", tt.wantEvents, len(events))
+			}
+		})
+	}
+}

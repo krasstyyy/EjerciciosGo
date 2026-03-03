@@ -20,24 +20,12 @@ type Item struct {
 	quantity int
 }
 
+type Event struct {
+	Type string
+}
+
 func NewItem(sku string, quantity int) *Item {
 	return &Item{sku: sku, quantity: quantity}
-}
-
-func (i *Item) GetSKU() string {
-	return i.sku
-}
-
-func (i *Item) GetQuantity() int {
-	return i.quantity
-}
-
-func (i *Item) SetSKU(sku string) {
-	i.sku = sku
-}
-
-func (i *Item) SetQuantity(qty int) {
-	i.quantity = qty
 }
 
 // Cart holds items before checkout.
@@ -48,18 +36,6 @@ type Cart struct {
 
 func NewCart(customerID string) *Cart {
 	return &Cart{customerID: customerID}
-}
-
-func (c *Cart) GetCustomerID() string {
-	return c.customerID
-}
-
-func (c *Cart) GetItems() []*Item {
-	return c.items
-}
-
-func (c *Cart) SetItems(items []*Item) {
-	c.items = items
 }
 
 func (c *Cart) AddItem(item *Item) {
@@ -108,46 +84,7 @@ type Order struct {
 	total      float64
 	status     string // "pending", "paid", "shipped", "cancelled"
 	address    string
-}
-
-func (o *Order) GetID() string {
-	return o.id
-}
-
-func (o *Order) GetCustomerID() string {
-	return o.customerID
-}
-
-func (o *Order) GetItems() []*Item {
-	return o.items
-}
-
-func (o *Order) GetTotal() float64 {
-	return o.total
-}
-
-func (o *Order) GetStatus() string {
-	return o.status
-}
-
-func (o *Order) GetAddress() string {
-	return o.address
-}
-
-func (o *Order) SetID(id string) {
-	o.id = id
-}
-
-func (o *Order) SetStatus(s string) {
-	o.status = s
-}
-
-func (o *Order) SetTotal(t float64) {
-	o.total = t
-}
-
-func (o *Order) SetAddress(addr string) {
-	o.address = addr
+	events     []Event
 }
 
 // --- Free functions: all business logic lives outside the structs ---
@@ -156,82 +93,110 @@ func (o *Order) SetAddress(addr string) {
 // creates a pending order. The caller must pass in every dependency and the
 // function reaches into every struct's internals.
 func PlaceOrder(cart *Cart, inventory *Inventory, pricer *Pricer) (*Order, error) {
-	if len(cart.GetItems()) == 0 {
+	if len(cart.items) == 0 {
 		return nil, errors.New("cart is empty")
 	}
 
 	// Validate stock for every item
-	for _, item := range cart.GetItems() {
-		if inventory.GetStock(item.GetSKU()) < item.GetQuantity() {
-			return nil, fmt.Errorf("insufficient stock for %s", item.GetSKU())
+	for _, item := range cart.items {
+		if inventory.GetStock(item.sku) < item.quantity {
+			return nil, fmt.Errorf("insufficient stock for %s", item.sku)
 		}
 	}
 
 	// Calculate total
 	total := 0.0
-	for _, item := range cart.GetItems() {
-		price := pricer.GetPrice(item.GetSKU())
+	for _, item := range cart.items {
+		price := pricer.GetPrice(item.sku)
 		if price <= 0 {
-			return nil, fmt.Errorf("no price for %s", item.GetSKU())
+			return nil, fmt.Errorf("no price for %s", item.sku)
 		}
-		total += price * float64(item.GetQuantity())
+		total += price * float64(item.quantity)
 	}
 
 	// Reserve inventory
-	for _, item := range cart.GetItems() {
-		inventory.SetStock(item.GetSKU(), inventory.GetStock(item.GetSKU())-item.GetQuantity())
+	for _, item := range cart.items {
+		inventory.SetStock(item.sku, inventory.GetStock(item.sku)-item.quantity)
 	}
 
 	return &Order{
-		id:         fmt.Sprintf("ORD-%s-%d", cart.GetCustomerID(), len(cart.GetItems())),
-		customerID: cart.GetCustomerID(),
-		items:      cart.GetItems(),
+		id:         fmt.Sprintf("ORD-%s-%d", cart.customerID, len(cart.items)),
+		customerID: cart.customerID,
+		items:      cart.items,
 		total:      total,
 		status:     "pending",
+		events:     []Event{{Type: "created"}},
 	}, nil
 }
 
 // Pay marks an order as paid. The caller must check status manually.
-func Pay(order *Order, amount float64) error {
-	if order.GetStatus() != "pending" {
-		return fmt.Errorf("cannot pay order in status %q", order.GetStatus())
+func (order *Order) Pay(amount float64) error {
+	if order.status != "pending" {
+		return fmt.Errorf("cannot pay order in status %q", order.status)
 	}
-	if amount < order.GetTotal() {
-		return fmt.Errorf("payment %.2f is less than total %.2f", amount, order.GetTotal())
+	if amount < order.total {
+		return fmt.Errorf("payment %.2f is less than total %.2f", amount, order.total)
 	}
-	order.SetStatus("paid")
+	order.status = "paid"
+	order.events = append(order.events, Event{Type: "paid"})
 	return nil
 }
 
 // Ship marks a paid order as shipped. The caller must check status and provide
 // an address.
-func Ship(order *Order, address string) error {
-	if order.GetStatus() != "paid" {
-		return fmt.Errorf("cannot ship order in status %q", order.GetStatus())
+func (order *Order) Ship(address string) error {
+	if order.status != "paid" {
+		return fmt.Errorf("cannot ship order in status %q", order.status)
 	}
 	if address == "" {
 		return errors.New("address is required")
 	}
-	order.SetAddress(address)
-	order.SetStatus("shipped")
+	order.address = address
+	order.status = "shipped"
+	order.events = append(order.events, Event{Type: "shipped"})
 	return nil
 }
 
 // Cancel cancels an order and restores inventory. The caller must know which
 // statuses are cancellable and manually restore stock.
-func Cancel(order *Order, inventory *Inventory) error {
-	if order.GetStatus() == "shipped" {
+func (order *Order) Cancel(inventory *Inventory) error {
+	if order.status == "shipped" {
 		return errors.New("cannot cancel a shipped order")
 	}
-	if order.GetStatus() == "cancelled" {
+	if order.status == "cancelled" {
 		return errors.New("order is already cancelled")
 	}
 
 	// Restore inventory
-	for _, item := range order.GetItems() {
-		inventory.SetStock(item.GetSKU(), inventory.GetStock(item.GetSKU())+item.GetQuantity())
+	for _, item := range order.items {
+		inventory.SetStock(item.sku, inventory.GetStock(item.sku)+item.quantity)
 	}
 
-	order.SetStatus("cancelled")
+	order.status = "cancelled"
+	order.events = append(order.events, Event{Type: "cancelled"})
 	return nil
+}
+
+func (cart *Cart) Checkout(inventory *Inventory, pricer *Pricer) (*Order, error) {
+
+	return PlaceOrder(cart, inventory, pricer)
+}
+
+func (order *Order) Total() float64 {
+
+	return order.total
+}
+
+func (order *Order) Status() string {
+
+	return order.status
+}
+
+func (inventory *Inventory) Stock(sku string) int {
+
+	return inventory.stock[sku]
+}
+
+func (order *Order) Events() []Event {
+	return order.events
 }
